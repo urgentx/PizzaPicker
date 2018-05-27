@@ -5,11 +5,11 @@ import android.graphics.drawable.Drawable
 import android.support.v4.content.ContextCompat
 import android.util.AttributeSet
 import android.view.View
-import android.widget.ImageView
-import android.widget.RelativeLayout
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import kotlinx.android.synthetic.main.slice.view.*
 
-class PizzaPicker : RelativeLayout {
+class PizzaPicker : LinearLayout {
 
     constructor(context: Context) : super(context) {
         mContext = context
@@ -29,8 +29,7 @@ class PizzaPicker : RelativeLayout {
         initView()
     }
 
-
-    private lateinit var mContext: Context
+    private val mContext: Context
     private var attributes: AttributeSet? = null
     private var styleAttr: Int? = null
     private var view: View? = null
@@ -52,14 +51,19 @@ class PizzaPicker : RelativeLayout {
         val arr = mContext.obtainStyledAttributes(attributes, R.styleable.PizzaPicker, styleAttr
                 ?: 0, 0)
 
-        iconDrawable = arr.getDrawable(R.styleable.PizzaPicker_ppIconDrawable)
-        color = arr.getColor(R.styleable.PizzaPicker_ppColor, mContext.resources.getColor(R.color.default_color))
+        iconDrawable = arr.getDrawable(R.styleable.PizzaPicker_pp_icon_drawable)
+        color = arr.getColor(R.styleable.PizzaPicker_pp_color, ContextCompat.getColor(mContext, R.color.default_color))
 
-        findViewById<ImageView>(R.id.icon).setImageDrawable(iconDrawable)
-        setBackgroundColor(color)
+        val numSlices = arr.getInteger(R.styleable.PizzaPicker_pp_num_slices, 0)
+        createSlices(numSlices)
 
         arr.recycle()
     }
 
-
+    private fun createSlices(numSlices: Int) {
+        for (i in 0..numSlices) {
+            val slice = Slice(context)
+            addViewInLayout(slice, i, ViewGroup.LayoutParams(44, 44))
+        }
+    }
 }

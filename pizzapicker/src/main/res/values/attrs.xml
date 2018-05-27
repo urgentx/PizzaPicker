@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="PizzaPicker">
-        <attr name="ppColor" format="reference" />
-        <attr name="ppIconDrawable" format="reference" />
-        <attr name="typeFace" format="string" />
+        <attr name="pp_color" format="color" />
+        <attr name="pp_icon_drawable" format="reference" />
+        <attr name="pp_num_slices" format="integer" />
     </declare-styleable>
 </resources>
