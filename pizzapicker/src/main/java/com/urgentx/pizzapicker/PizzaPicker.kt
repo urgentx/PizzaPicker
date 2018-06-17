@@ -63,7 +63,7 @@ class PizzaPicker : LinearLayout {
     private fun createSlices(numSlices: Int) {
         for (i in 0..numSlices) {
             val slice = Slice(context)
-            addViewInLayout(slice, i, ViewGroup.LayoutParams(44, 44))
+            addViewInLayout(slice, i, ViewGroup.LayoutParams(200, 200))
         }
     }
 }
