@@ -7,10 +7,12 @@
     tools:context=".MainActivity">
 
     <com.urgentx.pizzapicker.PizzaPicker
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:pp_color="@color/colorAccent"
-        app:pp_icon_drawable="@drawable/ic_android_blue_24dp"
-        app:pp_num_slices="5"/>
+        app:pp_num_slices="5" />
 
 </android.support.constraint.ConstraintLayout>
