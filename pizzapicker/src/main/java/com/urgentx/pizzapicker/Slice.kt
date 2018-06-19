@@ -10,13 +10,14 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import java.util.*
+import kotlin.math.sqrt
 
 @SuppressLint("ViewConstructor")
 class Slice : View {
 
     lateinit var oval: RectF
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    val random = Random()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val random = Random()
 
     private val startAngle: Float
     private val sweepAngle: Float
@@ -41,22 +42,33 @@ class Slice : View {
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (event?.action == MotionEvent.ACTION_UP) {
-            paint.setShadowLayer(12F, 3F, 3F, Color.RED)
-            logcat("Slice touched.")
+        if (event?.action == MotionEvent.ACTION_DOWN) {
+            val xDistance = event.x - width / 2
+            val yDistance = event.y - height / 2
+
+            val distance = sqrt(xDistance * xDistance + yDistance * yDistance)
+
+            var angle = Math.toDegrees(Math.atan2(yDistance.toDouble(), xDistance.toDouble()))
+            if (angle < 0) angle += 360
+
+            return if (angle > startAngle && angle < startAngle + sweepAngle && distance < width / 2) {
+                logcat("Touched Slice with Start angle: $startAngle, Sweep angle: $sweepAngle")
+                true
+            } else {
+                false
+            }
         }
-        return true
+        return false
     }
 
     override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas)
-
         paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
         canvas?.drawArc(oval, startAngle, sweepAngle, true, paint)
+        super.onDraw(canvas)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        oval = RectF(0F, 0F, w.toFloat(), h.toFloat())
+        oval = RectF(x, y, w.toFloat(), h.toFloat())
     }
 }
