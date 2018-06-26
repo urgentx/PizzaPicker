@@ -21,6 +21,7 @@ class Slice : View {
 
     private val startAngle: Float
     private val sweepAngle: Float
+    private var margin = 5
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
