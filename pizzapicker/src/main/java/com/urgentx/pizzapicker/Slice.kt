@@ -10,7 +10,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import java.util.*
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlin.math.tan
 
 @SuppressLint("ViewConstructor")
 class Slice : View {
@@ -53,7 +56,9 @@ class Slice : View {
             if (angle < 0) angle += 360
 
             return if (angle > startAngle && angle < startAngle + sweepAngle && distance < width / 2) {
-                logcat("Touched Slice with Start angle: $startAngle, Sweep angle: $sweepAngle")
+                val midAngle = startAngle + sweepAngle / 2
+
+                logcat("Midpoint on angle: (${cos(midAngle) * (width / 2)}, ${sin(midAngle) * (width / 2)})")
                 true
             } else {
                 false
@@ -71,5 +76,7 @@ class Slice : View {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         oval = RectF(x, y, w.toFloat(), h.toFloat())
+        val midAngle = startAngle + sweepAngle / 2
+        oval.offset(cos(midAngle) * (width / 2), sin(midAngle) * (width / 2))
     }
 }
