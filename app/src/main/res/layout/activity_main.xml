@@ -13,6 +13,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:pp_color="@color/colorAccent"
-        app:pp_num_slices="5" />
+        app:pp_num_slices="6" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

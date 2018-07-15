@@ -56,9 +56,9 @@ class Slice : View {
             if (angle < 0) angle += 360
 
             return if (angle > startAngle && angle < startAngle + sweepAngle && distance < width / 2) {
-                val midAngle = startAngle + sweepAngle / 2
+                val midAngle = (startAngle + sweepAngle) / 2
 
-                logcat("Midpoint on angle: (${cos(midAngle) * (width / 2)}, ${sin(midAngle) * (width / 2)})")
+                logcat("angle: (${cos(midAngle) * (width / 2)}, ${sin(midAngle) * (width / 2)})")
                 true
             } else {
                 false
@@ -69,14 +69,19 @@ class Slice : View {
 
     override fun onDraw(canvas: Canvas?) {
         paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
+        paint.textSize = 70F
         canvas?.drawArc(oval, startAngle, sweepAngle, true, paint)
+        val midAngle = startAngle + (sweepAngle / 2)
+        canvas?.drawText("$midAngle", startAngle * 2, 80F, paint)
         super.onDraw(canvas)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         oval = RectF(x, y, w.toFloat(), h.toFloat())
-        val midAngle = startAngle + sweepAngle / 2
-        oval.offset(cos(midAngle) * (width / 2), sin(midAngle) * (width / 2))
+        val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2)) + 90).toDouble())
+        val xOffset = 20 * (cos(midAngle)).toFloat()
+        val yOffset = 20 * (sin(midAngle)).toFloat()
+        oval.offset(xOffset, yOffset)
     }
 }
