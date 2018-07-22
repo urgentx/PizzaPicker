@@ -78,8 +78,8 @@ class Slice : View {
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        oval = RectF(x, y, w.toFloat(), h.toFloat())
-        val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2)) + 90).toDouble())
+        oval = RectF(x, y, w.toFloat() + 10, h.toFloat() + 10)
+        val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2)) + 60).toDouble())
         val xOffset = 20 * (cos(midAngle)).toFloat()
         val yOffset = 20 * (sin(midAngle)).toFloat()
         oval.offset(xOffset, yOffset)
