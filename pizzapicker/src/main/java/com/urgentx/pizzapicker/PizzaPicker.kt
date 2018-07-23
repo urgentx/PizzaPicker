@@ -7,9 +7,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.BaseAdapter
 import android.widget.RelativeLayout
 
-class PizzaPicker : RelativeLayout {
+class PizzaPicker : AdapterView<BaseAdapter> {
+    override fun setSelection(p0: Int) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun setAdapter(p0: BaseAdapter?) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getAdapter(): BaseAdapter {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getSelectedView(): View {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 
     constructor(context: Context) : super(context) {
         mContext = context

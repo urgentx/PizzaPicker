@@ -24,7 +24,7 @@ class Slice : View {
 
     private val startAngle: Float
     private val sweepAngle: Float
-    private var margin = 5
+    private var margin = 30
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
@@ -69,19 +69,22 @@ class Slice : View {
 
     override fun onDraw(canvas: Canvas?) {
         paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
-        paint.textSize = 70F
+        //Draw an arc from the start of the angle along $sweepAngle distance of perimeter
         canvas?.drawArc(oval, startAngle, sweepAngle, true, paint)
         val midAngle = startAngle + (sweepAngle / 2)
+        paint.textSize = 70F
         canvas?.drawText("$midAngle", startAngle * 2, 80F, paint)
         super.onDraw(canvas)
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        oval = RectF(x, y, w.toFloat() + 10, h.toFloat() + 10)
-        val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2)) + 60).toDouble())
-        val xOffset = 20 * (cos(midAngle)).toFloat()
-        val yOffset = 20 * (sin(midAngle)).toFloat()
+        //Determine size, position of Slice
+        oval = RectF(x + margin, y + margin, w.toFloat() - margin, h.toFloat() - margin)
+        //Need to convert angle to radians and offset the position based on the mid angle
+        val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2))).toDouble())
+        val xOffset = margin * (cos(midAngle)).toFloat()
+        val yOffset = margin * (sin(midAngle)).toFloat()
         oval.offset(xOffset, yOffset)
     }
 }
