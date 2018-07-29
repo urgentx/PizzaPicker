@@ -1,33 +1,31 @@
 package com.urgentx.pizzapicker
 
 import android.content.Context
-import androidx.core.content.ContextCompat
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.BaseAdapter
 import android.widget.RelativeLayout
+import androidx.core.content.ContextCompat
 
-class PizzaPicker : AdapterView<BaseAdapter> {
-    override fun setSelection(p0: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 
-    override fun setAdapter(p0: BaseAdapter?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+class PizzaPicker : RelativeLayout {
 
-    override fun getAdapter(): BaseAdapter {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    private val mContext: Context
+    private var attributes: AttributeSet? = null
+    private var styleAttr: Int? = null
 
-    override fun getSelectedView(): View {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    private var color: Int = 0
+        set(it) {
+            setBackgroundColor(it)
+        }
+
+    var adapter: BaseAdapter? = null
+        set(adapter) {
+            adapter?.let { bindToAdapter(it) }
+        }
 
     constructor(context: Context) : super(context) {
         mContext = context
@@ -47,17 +45,6 @@ class PizzaPicker : AdapterView<BaseAdapter> {
         initView()
     }
 
-    private val mContext: Context
-    private var attributes: AttributeSet? = null
-    private var styleAttr: Int? = null
-
-    private var color: Int = 0
-        set(it) {
-            setBackgroundColor(it)
-        }
-
-    private var numSlices = 5
-
     private fun initView() {
         LayoutInflater.from(mContext).inflate(R.layout.slice, this, true)
         View.inflate(mContext, R.layout.slice, this)
@@ -66,11 +53,12 @@ class PizzaPicker : AdapterView<BaseAdapter> {
                 ?: 0, 0)
 
         color = arr.getColor(R.styleable.PizzaPicker_pp_color, ContextCompat.getColor(mContext, R.color.default_color))
-
-        numSlices = arr.getInteger(R.styleable.PizzaPicker_pp_num_slices, 0)
-        createSlices(numSlices)
-
         arr.recycle()
+    }
+
+    private fun bindToAdapter(adapter: BaseAdapter) {
+        val numSlices = adapter.count
+        createSlices(numSlices)
     }
 
     private fun createSlices(numSlices: Int) {
@@ -78,6 +66,5 @@ class PizzaPicker : AdapterView<BaseAdapter> {
             val slice = Slice(context, i * (360F / (numSlices)), 360F / (numSlices))
             addViewInLayout(slice, i, ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
-
     }
 }
