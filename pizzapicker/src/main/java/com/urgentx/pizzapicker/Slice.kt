@@ -9,7 +9,14 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
+import io.reactivex.schedulers.Schedulers
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -22,12 +29,15 @@ class Slice : View {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val random = Random()
 
-    private val startAngle: Float
-    private val sweepAngle: Float
+    private var startAngle: Float
+    private var sweepAngle: Float
     private var margin = 30
+
+    private val compositeDisposable = CompositeDisposable()
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
+        paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
     }
 
     constructor(context: Context, startAngle: Float, sweepAngle: Float) : super(context) {
@@ -57,6 +67,7 @@ class Slice : View {
 
             return if (angle > startAngle && angle < startAngle + sweepAngle && distance < width / 2) {
                 val midAngle = (startAngle + sweepAngle) / 2
+                animateArc()
 
                 logcat("angle: (${cos(midAngle) * (width / 2)}, ${sin(midAngle) * (width / 2)})")
                 true
@@ -67,8 +78,20 @@ class Slice : View {
         return false
     }
 
+    private fun animateArc() {
+        val interpolator = AccelerateDecelerateInterpolator()
+        val originalStartAngle = sweepAngle.toDouble().toFloat()
+        val maxAngle = startAngle + sweepAngle + 100
+        Observable.interval(4, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    sweepAngle = interpolator.getInterpolation((originalStartAngle + sweepAngle) / maxAngle) * maxAngle
+                    invalidate()
+                }.addTo(compositeDisposable)
+    }
+
     override fun onDraw(canvas: Canvas?) {
-        paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
         //Draw an arc from the start of the angle along $sweepAngle distance of perimeter
         canvas?.drawArc(oval, startAngle, sweepAngle, true, paint)
         val midAngle = startAngle + (sweepAngle / 2)
