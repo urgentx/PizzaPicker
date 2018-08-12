@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.BounceInterpolator
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -31,6 +32,9 @@ class Slice : View {
 
     private var startAngle: Float
     private var sweepAngle: Float
+    private val originalSweepAngle: Float
+    var xOffset = 0F
+    var yOffset = 0F
     private var margin = 30
 
     private val compositeDisposable = CompositeDisposable()
@@ -43,17 +47,12 @@ class Slice : View {
     constructor(context: Context, startAngle: Float, sweepAngle: Float) : super(context) {
         this.startAngle = startAngle
         this.sweepAngle = sweepAngle
+        this.originalSweepAngle = sweepAngle
     }
 
-    constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float) : super(context, attrs) {
-        this.startAngle = startAngle
-        this.sweepAngle = sweepAngle
-    }
+    constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float) : this(context, startAngle, sweepAngle)
 
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, startAngle: Float, sweepAngle: Float) : super(context, attrs, defStyleAttr) {
-        this.startAngle = startAngle
-        this.sweepAngle = sweepAngle
-    }
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, startAngle: Float, sweepAngle: Float) : this(context, startAngle, sweepAngle)
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event?.action == MotionEvent.ACTION_DOWN) {
@@ -79,14 +78,19 @@ class Slice : View {
     }
 
     private fun animateArc() {
-        val interpolator = AccelerateDecelerateInterpolator()
-        val originalStartAngle = sweepAngle.toDouble().toFloat()
-        val maxAngle = startAngle + sweepAngle + 100
+        val interpolator = BounceInterpolator()
+        val xOff = xOffset * -1
+        val yOff = yOffset * -1
         Observable.interval(4, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
-                    sweepAngle = interpolator.getInterpolation((originalStartAngle + sweepAngle) / maxAngle) * maxAngle
+                    val durationElapsed = (it / 240F)
+                    if (durationElapsed < 1) {
+                        val animationElapsed = interpolator.getInterpolation(durationElapsed)
+                        sweepAngle = originalSweepAngle + (animationElapsed * 180)
+                        logcat("$animationElapsed")
+                    }
                     invalidate()
                 }.addTo(compositeDisposable)
     }
@@ -106,8 +110,8 @@ class Slice : View {
         oval = RectF(x + margin, y + margin, w.toFloat() - margin, h.toFloat() - margin)
         //Need to convert angle to radians and offset the position based on the mid angle
         val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2))).toDouble())
-        val xOffset = margin * (cos(midAngle)).toFloat()
-        val yOffset = margin * (sin(midAngle)).toFloat()
+        xOffset = margin * (cos(midAngle)).toFloat()
+        yOffset = margin * (sin(midAngle)).toFloat()
         oval.offset(xOffset, yOffset)
     }
 }
