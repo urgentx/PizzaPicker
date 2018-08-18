@@ -27,6 +27,7 @@ import kotlin.math.tan
 class Slice : View {
 
     lateinit var oval: RectF
+    lateinit var fullOval: RectF
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val random = Random()
 
@@ -81,6 +82,11 @@ class Slice : View {
         val interpolator = BounceInterpolator()
         val xOff = xOffset * -1
         val yOff = yOffset * -1
+        oval.left -= margin
+        oval.right += margin
+        oval.top -= margin
+        oval.bottom += margin
+        oval.offset(xOff, yOff)
         Observable.interval(4, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
