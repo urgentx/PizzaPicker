@@ -9,7 +9,6 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.BounceInterpolator
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -21,21 +20,19 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.math.tan
 
 @SuppressLint("ViewConstructor")
 class Slice : View {
 
-    lateinit var oval: RectF
-    lateinit var fullOval: RectF
+    lateinit var normalOval: RectF //Normal bounds
+    lateinit var fullOval: RectF //Expanded bounds
+    lateinit var currentOval: RectF
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val random = Random()
 
     private var startAngle: Float
     private var sweepAngle: Float
     private val originalSweepAngle: Float
-    var xOffset = 0F
-    var yOffset = 0F
     private var margin = 30
 
     private val compositeDisposable = CompositeDisposable()
@@ -67,8 +64,7 @@ class Slice : View {
 
             return if (angle > startAngle && angle < startAngle + sweepAngle && distance < width / 2) {
                 val midAngle = (startAngle + sweepAngle) / 2
-                animateArc()
-
+                animateArc(currentOval == normalOval)
                 logcat("angle: (${cos(midAngle) * (width / 2)}, ${sin(midAngle) * (width / 2)})")
                 true
             } else {
@@ -78,15 +74,9 @@ class Slice : View {
         return false
     }
 
-    private fun animateArc() {
+    private fun animateArc(open: Boolean) {
         val interpolator = BounceInterpolator()
-        val xOff = xOffset * -1
-        val yOff = yOffset * -1
-        oval.left -= margin
-        oval.right += margin
-        oval.top -= margin
-        oval.bottom += margin
-        oval.offset(xOff, yOff)
+        currentOval = if (open) fullOval else normalOval
         Observable.interval(4, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -94,8 +84,11 @@ class Slice : View {
                     val durationElapsed = (it / 240F)
                     if (durationElapsed < 1) {
                         val animationElapsed = interpolator.getInterpolation(durationElapsed)
-                        sweepAngle = originalSweepAngle + (animationElapsed * 180)
-                        logcat("$animationElapsed")
+                        sweepAngle = if (open){
+                            originalSweepAngle + (animationElapsed * 180)
+                        } else {
+                            originalSweepAngle + 180 - (animationElapsed * 180)
+                        }
                     }
                     invalidate()
                 }.addTo(compositeDisposable)
@@ -103,7 +96,7 @@ class Slice : View {
 
     override fun onDraw(canvas: Canvas?) {
         //Draw an arc from the start of the angle along $sweepAngle distance of perimeter
-        canvas?.drawArc(oval, startAngle, sweepAngle, true, paint)
+        canvas?.drawArc(currentOval, startAngle, sweepAngle, true, paint)
         val midAngle = startAngle + (sweepAngle / 2)
         paint.textSize = 70F
         canvas?.drawText("$midAngle", startAngle * 2, 80F, paint)
@@ -113,11 +106,13 @@ class Slice : View {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         //Determine size, position of Slice
-        oval = RectF(x + margin, y + margin, w.toFloat() - margin, h.toFloat() - margin)
+        fullOval = RectF(x, y, w.toFloat(), h.toFloat())
+        normalOval = RectF(x + margin, y + margin, w.toFloat() - margin, h.toFloat() - margin)
         //Need to convert angle to radians and offset the position based on the mid angle
         val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2))).toDouble())
-        xOffset = margin * (cos(midAngle)).toFloat()
-        yOffset = margin * (sin(midAngle)).toFloat()
-        oval.offset(xOffset, yOffset)
+        val xOffset = margin * (cos(midAngle)).toFloat()
+        val yOffset = margin * (sin(midAngle)).toFloat()
+        normalOval.offset(xOffset, yOffset)
+        currentOval = normalOval
     }
 }
