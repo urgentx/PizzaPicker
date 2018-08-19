@@ -9,7 +9,11 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.BounceInterpolator
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
+import android.widget.TextView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -30,6 +34,7 @@ class Slice : View {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val random = Random()
 
+    private val model: SliceModel
     private var startAngle: Float
     private var sweepAngle: Float
     private val originalSweepAngle: Float
@@ -42,15 +47,16 @@ class Slice : View {
         paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
     }
 
-    constructor(context: Context, startAngle: Float, sweepAngle: Float) : super(context) {
+    constructor(context: Context, startAngle: Float, sweepAngle: Float, model: SliceModel) : super(context) {
         this.startAngle = startAngle
         this.sweepAngle = sweepAngle
         this.originalSweepAngle = sweepAngle
+        this.model = model
     }
 
-    constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float) : this(context, startAngle, sweepAngle)
+    constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
 
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, startAngle: Float, sweepAngle: Float) : this(context, startAngle, sweepAngle)
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event?.action == MotionEvent.ACTION_DOWN) {
@@ -84,7 +90,7 @@ class Slice : View {
                     val durationElapsed = (it / 240F)
                     if (durationElapsed < 1) {
                         val animationElapsed = interpolator.getInterpolation(durationElapsed)
-                        sweepAngle = if (open){
+                        sweepAngle = if (open) {
                             originalSweepAngle + (animationElapsed * 180)
                         } else {
                             originalSweepAngle + 180 - (animationElapsed * 180)
@@ -114,5 +120,10 @@ class Slice : View {
         val yOffset = margin * (sin(midAngle)).toFloat()
         normalOval.offset(xOffset, yOffset)
         currentOval = normalOval
+        val textView = TextView(context)
+        textView.layoutParams = RelativeLayout.LayoutParams(200, 100)
+        textView.text = model.text //TODO: Add views to layout.
     }
+
+    data class SliceModel(val title: String, val text: String?, val iconRes: Int?)
 }
