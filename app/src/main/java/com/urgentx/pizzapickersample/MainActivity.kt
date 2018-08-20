@@ -11,7 +11,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val adapter = ArrayAdapter(this, R.layout.adapter_item, listOf("1", "2", "3"))
+        val adapter = ArrayAdapter(this, R.layout.adapter_item, listOf("1", "2", "3", "4"))
         pizza_picker.adapter = adapter
     }
 }

@@ -10,13 +10,14 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.BounceInterpolator
+import android.view.animation.*
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import java.util.*
@@ -28,9 +29,9 @@ import kotlin.math.sqrt
 @SuppressLint("ViewConstructor")
 class Slice : View {
 
-    lateinit var normalOval: RectF //Normal bounds
-    lateinit var fullOval: RectF //Expanded bounds
-    lateinit var currentOval: RectF
+    private lateinit var normalOval: RectF //Normal bounds
+    private lateinit var fullOval: RectF //Expanded bounds
+    private lateinit var currentOval: RectF
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val random = Random()
 
@@ -41,12 +42,14 @@ class Slice : View {
     private var margin = 30
 
     private val compositeDisposable = CompositeDisposable()
+    private var currentAnimDisposable: Disposable? = null
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
         paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
     }
 
+    //TODO: Investigate alternatives for telescoping constructors.
     constructor(context: Context, startAngle: Float, sweepAngle: Float, model: SliceModel) : super(context) {
         this.startAngle = startAngle
         this.sweepAngle = sweepAngle
@@ -81,9 +84,11 @@ class Slice : View {
     }
 
     private fun animateArc(open: Boolean) {
-        val interpolator = BounceInterpolator()
+        //Interpolate over arc angles to achieve animation effect
+        val interpolator = OvershootInterpolator(0.8F)
         currentOval = if (open) fullOval else normalOval
-        Observable.interval(4, TimeUnit.MILLISECONDS)
+        currentAnimDisposable?.dispose() //End previous animation
+        currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
@@ -120,10 +125,21 @@ class Slice : View {
         val yOffset = margin * (sin(midAngle)).toFloat()
         normalOval.offset(xOffset, yOffset)
         currentOval = normalOval
-        val textView = TextView(context)
-        textView.layoutParams = RelativeLayout.LayoutParams(200, 100)
-        textView.text = model.text //TODO: Add views to layout.
     }
+
+    override fun draw(canvas: Canvas?) {
+        super.draw(canvas)
+        //Parent is now ready to accept new Views, safe to add TVs.
+        val textView = TextView(context)
+        textView.text = model.text
+        val xDiff = (normalOval.left - fullOval.left) * 7//45
+        val yDiff = (normalOval.top - fullOval.top) * 7//55
+        val layoutParams = RelativeLayout.LayoutParams(200, 100)
+        layoutParams.leftMargin = (width / 6 + xDiff).toInt()
+        layoutParams.topMargin = (height / 6 + yDiff).toInt()
+        (parent as PizzaPicker).addView(textView, layoutParams)
+    }
+
 
     data class SliceModel(val title: String, val text: String?, val iconRes: Int?)
 }
