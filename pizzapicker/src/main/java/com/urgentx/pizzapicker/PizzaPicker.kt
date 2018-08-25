@@ -63,7 +63,10 @@ class PizzaPicker : RelativeLayout {
 
     private fun createSlices(numSlices: Int) {
         for (i in 0 until numSlices) {
-            val slice = Slice(context, i * (360F / (numSlices)), 360F / (numSlices), Slice.SliceModel("Yo", "Some text", R.drawable.abc_ab_share_pack_mtrl_alpha))
+            val slice = Slice(context, i * (360F / (numSlices)), 360F / (numSlices), Slice.SliceModel("Yo",
+                    "Some text",
+                    R.drawable.abc_ab_share_pack_mtrl_alpha,
+                    R.color.default_color))
             addView(slice, ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
     }

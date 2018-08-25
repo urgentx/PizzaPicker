@@ -14,6 +14,7 @@ import android.view.animation.*
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -46,7 +47,6 @@ class Slice : View {
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
-        paint.color = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256))
     }
 
     //TODO: Investigate alternatives for telescoping constructors.
@@ -55,6 +55,7 @@ class Slice : View {
         this.sweepAngle = sweepAngle
         this.originalSweepAngle = sweepAngle
         this.model = model
+        paint.color = ContextCompat.getColor(context, model.colorRes)
     }
 
     constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
@@ -86,7 +87,6 @@ class Slice : View {
     private fun animateArc(open: Boolean) {
         //Interpolate over arc angles to achieve animation effect
         val interpolator = OvershootInterpolator(0.8F)
-        currentOval = if (open) fullOval else normalOval
         currentAnimDisposable?.dispose() //End previous animation
         currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
@@ -100,6 +100,8 @@ class Slice : View {
                         } else {
                             originalSweepAngle + 180 - (animationElapsed * 180)
                         }
+                    }  else {
+                        currentOval = if (open) fullOval else normalOval
                     }
                     invalidate()
                 }.addTo(compositeDisposable)
@@ -140,6 +142,5 @@ class Slice : View {
         (parent as PizzaPicker).addView(textView, layoutParams)
     }
 
-
-    data class SliceModel(val title: String, val text: String?, val iconRes: Int?)
+    data class SliceModel(val title: String, val text: String?, val iconRes: Int?, val colorRes: Int)
 }
