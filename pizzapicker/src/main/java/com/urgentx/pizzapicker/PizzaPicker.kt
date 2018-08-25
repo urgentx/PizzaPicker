@@ -17,11 +17,6 @@ class PizzaPicker : RelativeLayout {
     private var attributes: AttributeSet? = null
     private var styleAttr: Int? = null
 
-    private var color: Int = 0
-        set(it) {
-            setBackgroundColor(it)
-        }
-
     var adapter: BaseAdapter? = null
         set(adapter) {
             adapter?.let { bindToAdapter(it) }
@@ -51,8 +46,6 @@ class PizzaPicker : RelativeLayout {
 
         val arr = mContext.obtainStyledAttributes(attributes, R.styleable.PizzaPicker, styleAttr
                 ?: 0, 0)
-
-        color = arr.getColor(R.styleable.PizzaPicker_pp_color, ContextCompat.getColor(mContext, R.color.default_color))
         arr.recycle()
     }
 

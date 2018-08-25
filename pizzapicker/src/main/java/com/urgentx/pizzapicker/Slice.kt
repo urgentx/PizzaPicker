@@ -87,6 +87,8 @@ class Slice : View {
     private fun animateArc(open: Boolean) {
         //Interpolate over arc angles to achieve animation effect
         val interpolator = OvershootInterpolator(0.8F)
+        val xOffset = fullOval.left - normalOval.left
+        val yOffset = fullOval.top - normalOval.top
         currentAnimDisposable?.dispose() //End previous animation
         currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
@@ -100,7 +102,7 @@ class Slice : View {
                         } else {
                             originalSweepAngle + 180 - (animationElapsed * 180)
                         }
-                    }  else {
+                    } else {
                         currentOval = if (open) fullOval else normalOval
                     }
                     invalidate()
