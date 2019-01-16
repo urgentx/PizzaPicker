@@ -45,6 +45,8 @@ class Slice : View {
     private val compositeDisposable = CompositeDisposable()
     private var currentAnimDisposable: Disposable? = null
 
+    private val interpolator = AccelerateDecelerateInterpolator()
+
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
     }
@@ -86,11 +88,11 @@ class Slice : View {
 
     private fun animateArc(open: Boolean) {
         //Interpolate over arc angles to achieve animation effect
-        val interpolator = OvershootInterpolator(0.8F)
+        bringToFront()
         val xOffset = fullOval.left - normalOval.left
         val yOffset = fullOval.top - normalOval.top
         currentAnimDisposable?.dispose() //End previous animation
-        currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS)
+        currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS) //TODO: Investigate memory leak.
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
@@ -101,6 +103,13 @@ class Slice : View {
                             originalSweepAngle + (animationElapsed * 180)
                         } else {
                             originalSweepAngle + 180 - (animationElapsed * 180)
+                        }
+                        if (open) { //TODO: Approach center.
+                            logcat("x")
+                            currentOval.offset(animationElapsed / 3, animationElapsed / 3)
+                        } else {
+                            logcat("y")
+                            currentOval.offset(-animationElapsed / 3, -animationElapsed / 3)
                         }
                     } else {
                         currentOval = if (open) fullOval else normalOval
