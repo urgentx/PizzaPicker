@@ -9,9 +9,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
 import android.view.animation.*
-import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -46,6 +44,8 @@ class Slice : View {
     private var currentAnimDisposable: Disposable? = null
 
     private val interpolator = AccelerateDecelerateInterpolator()
+    private var open = false
+    private var animating = false
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
@@ -66,19 +66,20 @@ class Slice : View {
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event?.action == MotionEvent.ACTION_DOWN) {
-            val xDistance = event.x - width / 2
-            val yDistance = event.y - height / 2
+            val xDistanceFromCenter = event.x - width / 2
+            val yDistanceFromCenter = event.y - height / 2
 
-            val distance = sqrt(xDistance * xDistance + yDistance * yDistance)
+            val distance = sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter)
 
-            var angle = Math.toDegrees(Math.atan2(yDistance.toDouble(), xDistance.toDouble()))
+            var angle = Math.toDegrees(Math.atan2(yDistanceFromCenter.toDouble(), xDistanceFromCenter.toDouble()))
             if (angle < 0) angle += 360
 
-            return if (angle > startAngle && angle < startAngle + sweepAngle && distance < width / 2) {
+            return if (angle in startAngle..startAngle + sweepAngle && distance < width / 2) {
                 val midAngle = (startAngle + sweepAngle) / 2
-                animateArc(currentOval == normalOval)
                 logcat("angle: (${cos(midAngle) * (width / 2)}, ${sin(midAngle) * (width / 2)})")
-                true
+                open = !open
+                animateArc()
+                true //Consume touch
             } else {
                 false
             }
@@ -86,13 +87,14 @@ class Slice : View {
         return false
     }
 
-    private fun animateArc(open: Boolean) {
+    private val growthRate = 29F
+
+    private fun animateArc() {
         //Interpolate over arc angles to achieve animation effect
+        logcat("normal: $normalOval, current: $currentOval")
         bringToFront()
-        val xOffset = fullOval.left - normalOval.left
-        val yOffset = fullOval.top - normalOval.top
         currentAnimDisposable?.dispose() //End previous animation
-        currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS) //TODO: Investigate memory leak.
+        currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
@@ -102,17 +104,26 @@ class Slice : View {
                         sweepAngle = if (open) {
                             originalSweepAngle + (animationElapsed * 180)
                         } else {
-                            originalSweepAngle + 180 - (animationElapsed * 180)
+                            originalSweepAngle + 180 - (animationElapsed * 180) //TODO: better choice for arc
                         }
-                        if (open) { //TODO: Approach center.
-                            logcat("x")
-                            currentOval.offset(animationElapsed / 3, animationElapsed / 3)
+                        if (open) {
+                            val xDiff = (fullOval.centerX() - normalOval.centerX())
+                            val yDiff = (fullOval.centerY() - normalOval.centerY())
+                            currentOval.top = normalOval.top + (yDiff - growthRate) * animationElapsed
+                            currentOval.bottom = normalOval.bottom + (yDiff + growthRate) * animationElapsed
+                            currentOval.left = normalOval.left + (xDiff - growthRate) * animationElapsed
+                            currentOval.right = normalOval.right + (xDiff + growthRate) * animationElapsed
                         } else {
-                            logcat("y")
-                            currentOval.offset(-animationElapsed / 3, -animationElapsed / 3)
+                            val xDiff = (fullOval.centerX() - normalOval.centerX())
+                            val yDiff = (fullOval.centerY() - normalOval.centerY())
+                            currentOval.top = fullOval.top - (yDiff - growthRate) * animationElapsed
+                            currentOval.bottom = fullOval.bottom - (yDiff + growthRate) * animationElapsed
+                            currentOval.left = fullOval.left - (xDiff - growthRate) * animationElapsed
+                            currentOval.right = fullOval.right - (xDiff + growthRate) * animationElapsed
                         }
                     } else {
-                        currentOval = if (open) fullOval else normalOval
+                        currentOval = RectF(if (open) fullOval else normalOval)
+                        currentAnimDisposable?.dispose() //TODO: Handle midway transition between open/close
                     }
                     invalidate()
                 }.addTo(compositeDisposable)
@@ -121,9 +132,6 @@ class Slice : View {
     override fun onDraw(canvas: Canvas?) {
         //Draw an arc from the start of the angle along $sweepAngle distance of perimeter
         canvas?.drawArc(currentOval, startAngle, sweepAngle, true, paint)
-        val midAngle = startAngle + (sweepAngle / 2)
-        paint.textSize = 70F
-        canvas?.drawText("$midAngle", startAngle * 2, 80F, paint)
         super.onDraw(canvas)
     }
 
@@ -137,20 +145,21 @@ class Slice : View {
         val xOffset = margin * (cos(midAngle)).toFloat()
         val yOffset = margin * (sin(midAngle)).toFloat()
         normalOval.offset(xOffset, yOffset)
-        currentOval = normalOval
+        currentOval = RectF(normalOval)
     }
 
     override fun draw(canvas: Canvas?) {
         super.draw(canvas)
         //Parent is now ready to accept new Views, safe to add TVs.
-        val textView = TextView(context)
-        textView.text = model.text
-        val xDiff = (normalOval.left - fullOval.left) * 7//45
-        val yDiff = (normalOval.top - fullOval.top) * 7//55
-        val layoutParams = RelativeLayout.LayoutParams(200, 100)
-        layoutParams.leftMargin = (width / 6 + xDiff).toInt()
-        layoutParams.topMargin = (height / 6 + yDiff).toInt()
-        (parent as PizzaPicker).addView(textView, layoutParams)
+//        val textView = TextView(context)
+//        textView.text = model.text
+//        val xDiff = (normalOval.left - fullOval.left) * 7//45
+//        val yDiff = (normalOval.top - fullOval.top) * 7//55
+//        val layoutParams = RelativeLayout.LayoutParams(200, 100)
+//        layoutParams.leftMargin = (width / 6 + xDiff).toInt()
+//        layoutParams.topMargin = (height / 6 + yDiff).toInt()
+//        (parent as PizzaPicker).addView(textView, layoutParams)
+        //TODO: Optimise this TextView creation
     }
 
     data class SliceModel(val title: String, val text: String?, val iconRes: Int?, val colorRes: Int)
