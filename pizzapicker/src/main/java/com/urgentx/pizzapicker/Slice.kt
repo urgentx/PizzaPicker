@@ -44,6 +44,7 @@ class Slice : View {
     private var currentAnimDisposable: Disposable? = null
 
     private val interpolator = AccelerateDecelerateInterpolator()
+    private var animationProgress = 0F
     private var open = false
     private var animating = false
 
@@ -98,9 +99,10 @@ class Slice : View {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
-                    val durationElapsed = (it / 240F)
-                    if (durationElapsed < 1) {
-                        val animationElapsed = interpolator.getInterpolation(durationElapsed)
+                    if (open) animationProgress += 1 else animationProgress -= 1
+                    if (animationProgress in 0F..240F) {
+                        val progress = animationProgress / 240F
+                        val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress)
                         sweepAngle = if (open) {
                             originalSweepAngle + (animationElapsed * 180)
                         } else {
