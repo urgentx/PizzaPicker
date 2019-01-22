@@ -36,6 +36,7 @@ class Slice : View {
 
     private val model: SliceModel
     private var startAngle: Float
+    private val originalStartAngle: Float
     private var sweepAngle: Float
     private val originalSweepAngle: Float
     private var margin = 30
@@ -55,6 +56,7 @@ class Slice : View {
     //TODO: Investigate alternatives for telescoping constructors.
     constructor(context: Context, startAngle: Float, sweepAngle: Float, model: SliceModel) : super(context) {
         this.startAngle = startAngle
+        this.originalStartAngle = startAngle
         this.sweepAngle = sweepAngle
         this.originalSweepAngle = sweepAngle
         this.model = model
@@ -103,12 +105,9 @@ class Slice : View {
                     if (animationProgress in 0F..240F) {
                         val progress = animationProgress / 240F
                         val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress)
-                        sweepAngle = if (open) {
-                            originalSweepAngle + (animationElapsed * 180)
-                        } else {
-                            originalSweepAngle + 180 - (animationElapsed * 180) //TODO: better choice for arc
-                        }
                         if (open) {
+                            sweepAngle = originalSweepAngle + (animationElapsed * 270)
+                            startAngle = originalStartAngle - (animationElapsed * 135)
                             val xDiff = (fullOval.centerX() - normalOval.centerX())
                             val yDiff = (fullOval.centerY() - normalOval.centerY())
                             currentOval.top = normalOval.top + (yDiff - growthRate) * animationElapsed
@@ -116,6 +115,8 @@ class Slice : View {
                             currentOval.left = normalOval.left + (xDiff - growthRate) * animationElapsed
                             currentOval.right = normalOval.right + (xDiff + growthRate) * animationElapsed
                         } else {
+                            sweepAngle = originalSweepAngle + 270 - (animationElapsed * 270)
+                            startAngle = originalStartAngle - 135 + (animationElapsed * 135)
                             val xDiff = (fullOval.centerX() - normalOval.centerX())
                             val yDiff = (fullOval.centerY() - normalOval.centerY())
                             currentOval.top = fullOval.top - (yDiff - growthRate) * animationElapsed
@@ -125,7 +126,7 @@ class Slice : View {
                         }
                     } else {
                         currentOval = RectF(if (open) fullOval else normalOval)
-                        currentAnimDisposable?.dispose() //TODO: Handle midway transition between open/close
+                        currentAnimDisposable?.dispose()
                     }
                     invalidate()
                 }.addTo(compositeDisposable)
