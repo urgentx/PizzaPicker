@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.*
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -26,13 +27,12 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 @SuppressLint("ViewConstructor")
-class Slice : View {
+class Slice : RelativeLayout {
 
     private lateinit var normalOval: RectF //Normal bounds
     private lateinit var fullOval: RectF //Expanded bounds
     private lateinit var currentOval: RectF
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val random = Random()
 
     private val model: SliceModel
     private var startAngle: Float
@@ -47,10 +47,14 @@ class Slice : View {
     private val interpolator = AccelerateDecelerateInterpolator()
     private var animationProgress = 0F
     private var open = false
-    private var animating = false
+
+    private val textView = TextView(context)
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
+        setWillNotDraw(false) //enable drawing in this ViewGroup
+        textView.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
+        addView(textView)
     }
 
     //TODO: Investigate alternatives for telescoping constructors.
@@ -60,12 +64,28 @@ class Slice : View {
         this.sweepAngle = sweepAngle
         this.originalSweepAngle = sweepAngle
         this.model = model
+        textView.text = model.text
         paint.color = ContextCompat.getColor(context, model.colorRes)
     }
 
     constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        //Determine size, position of Slice
+        fullOval = RectF(x, y, w.toFloat(), h.toFloat())
+        normalOval = RectF(x + margin, y + margin, w.toFloat() - margin, h.toFloat() - margin)
+        //Need to convert angle to radians and offset the position based on the mid angle
+        val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2))).toDouble())
+        val xOffset = margin * (cos(midAngle)).toFloat()
+        val yOffset = margin * (sin(midAngle)).toFloat()
+        normalOval.offset(xOffset, yOffset)
+        currentOval = RectF(normalOval)
+        textView.x = w / 2 - textView.measuredWidth / 2F + xOffset * 10
+        textView.y = h / 2 - textView.measuredHeight / 2F + yOffset * 10
+    }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event?.action == MotionEvent.ACTION_DOWN) {
@@ -136,33 +156,6 @@ class Slice : View {
         //Draw an arc from the start of the angle along $sweepAngle distance of perimeter
         canvas?.drawArc(currentOval, startAngle, sweepAngle, true, paint)
         super.onDraw(canvas)
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        //Determine size, position of Slice
-        fullOval = RectF(x, y, w.toFloat(), h.toFloat())
-        normalOval = RectF(x + margin, y + margin, w.toFloat() - margin, h.toFloat() - margin)
-        //Need to convert angle to radians and offset the position based on the mid angle
-        val midAngle = Math.toRadians(((startAngle + (sweepAngle / 2))).toDouble())
-        val xOffset = margin * (cos(midAngle)).toFloat()
-        val yOffset = margin * (sin(midAngle)).toFloat()
-        normalOval.offset(xOffset, yOffset)
-        currentOval = RectF(normalOval)
-    }
-
-    override fun draw(canvas: Canvas?) {
-        super.draw(canvas)
-        //Parent is now ready to accept new Views, safe to add TVs.
-//        val textView = TextView(context)
-//        textView.text = model.text
-//        val xDiff = (normalOval.left - fullOval.left) * 7//45
-//        val yDiff = (normalOval.top - fullOval.top) * 7//55
-//        val layoutParams = RelativeLayout.LayoutParams(200, 100)
-//        layoutParams.leftMargin = (width / 6 + xDiff).toInt()
-//        layoutParams.topMargin = (height / 6 + yDiff).toInt()
-//        (parent as PizzaPicker).addView(textView, layoutParams)
-        //TODO: Optimise this TextView creation
     }
 
     data class SliceModel(val title: String, val text: String?, val iconRes: Int?, val colorRes: Int)
