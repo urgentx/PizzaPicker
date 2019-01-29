@@ -19,6 +19,7 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -118,8 +119,8 @@ class Slice : RelativeLayout {
     private val growthRate = 29F
 
     private fun animateArc() {
+        val angleToCover = 360 - originalSweepAngle
         //Interpolate over arc angles to achieve animation effect
-        logcat("normal: $normalOval, current: $currentOval")
         bringToFront()
         currentAnimDisposable?.dispose() //End previous animation
         currentAnimDisposable = Observable.interval(4, TimeUnit.MILLISECONDS)
@@ -131,8 +132,8 @@ class Slice : RelativeLayout {
                         val progress = animationProgress / 240F
                         val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress)
                         if (open) { //TODO: Refactor into methods.
-                            sweepAngle = originalSweepAngle + (animationElapsed * 270) //TODO: Derive remaining angle till complete
-                            startAngle = originalStartAngle - (animationElapsed * 135)
+                            sweepAngle = originalSweepAngle + (animationElapsed * angleToCover)
+                            startAngle = originalStartAngle - (animationElapsed * angleToCover / 2)
                             val xDiff = (fullOval.centerX() - normalOval.centerX())
                             val yDiff = (fullOval.centerY() - normalOval.centerY())
                             currentOval.top = normalOval.top + (yDiff - growthRate) * animationElapsed
@@ -145,8 +146,8 @@ class Slice : RelativeLayout {
                             +yOffset * 10
                             text.alpha = animationElapsed
                         } else {
-                            sweepAngle = originalSweepAngle + 270 - (animationElapsed * 270)
-                            startAngle = originalStartAngle - 135 + (animationElapsed * 135)
+                            sweepAngle = originalSweepAngle + angleToCover - (animationElapsed * angleToCover)
+                            startAngle = originalStartAngle - angleToCover / 2 + (animationElapsed * angleToCover / 2)
                             val xDiff = (fullOval.centerX() - normalOval.centerX())
                             val yDiff = (fullOval.centerY() - normalOval.centerY())
                             currentOval.top = fullOval.top - (yDiff - growthRate) * animationElapsed
