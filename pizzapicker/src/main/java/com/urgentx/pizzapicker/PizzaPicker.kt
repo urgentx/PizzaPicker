@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.BaseAdapter
 import android.widget.RelativeLayout
-import androidx.core.content.ContextCompat
+import com.urgentx.pizzapicker.models.SliceModel
 
 
 class PizzaPicker : RelativeLayout {
@@ -16,11 +16,6 @@ class PizzaPicker : RelativeLayout {
     private val mContext: Context
     private var attributes: AttributeSet? = null
     private var styleAttr: Int? = null
-
-    var adapter: BaseAdapter? = null
-        set(adapter) {
-            adapter?.let { bindToAdapter(it) }
-        }
 
     constructor(context: Context) : super(context) {
         mContext = context
@@ -49,17 +44,13 @@ class PizzaPicker : RelativeLayout {
         arr.recycle()
     }
 
-    private fun bindToAdapter(adapter: BaseAdapter) {
-        val numSlices = adapter.count
-        createSlices(numSlices)
+    fun setItems(items: List<SliceModel>) {
+        createSlices(items)
     }
 
-    private fun createSlices(numSlices: Int) {
-        for (i in 0 until numSlices) {
-            val slice = Slice(context, i * (360F / (numSlices)), 360F / (numSlices), Slice.SliceModel("Yo",
-                    "Some text",
-                    R.drawable.abc_ab_share_pack_mtrl_alpha,
-                    R.color.default_color))
+    private fun createSlices(items: List<SliceModel>) {
+        items.forEachIndexed { index, sliceModel ->
+            val slice = Slice(context, index * (360F / (items.size)), 360F / (items.size), sliceModel)
             addView(slice, ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
     }

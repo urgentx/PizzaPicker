@@ -8,10 +8,11 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.view.animation.*
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import com.urgentx.pizzapicker.models.SliceModel
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -19,7 +20,6 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
-import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -56,7 +56,7 @@ class Slice : RelativeLayout {
         title.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
         title.textSize = 25F
         addView(title)
-        text.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
+        text.layoutParams = RelativeLayout.LayoutParams(600, RelativeLayout.LayoutParams.WRAP_CONTENT)
         text.alpha = 0F //Initially not seen
         addView(text)
     }
@@ -67,9 +67,9 @@ class Slice : RelativeLayout {
         this.originalStartAngle = startAngle
         this.sweepAngle = sweepAngle
         this.originalSweepAngle = sweepAngle
-        title.text = model.title
-        text.text = model.text
-        paint.color = ContextCompat.getColor(context, model.colorRes)
+        title.text = model.getTitle()
+        text.text = model.getText()
+        paint.color = ContextCompat.getColor(context, model.getColorRes())
     }
 
     constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
@@ -91,6 +91,7 @@ class Slice : RelativeLayout {
         title.y = h / 2 - title.measuredHeight / 2F + yOffset * 10
         text.x = w / 2 - text.measuredWidth / 2F + xOffset * 10
         text.y = h / 2 - text.measuredHeight / 2F + yOffset * 10
+        text.layoutParams.width = w / 2 //TODO: Implement this width properly
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -116,10 +117,7 @@ class Slice : RelativeLayout {
         return false
     }
 
-    private val growthRate = 29F
-
     private fun animateArc() {
-        val angleToCover = 360 - originalSweepAngle
         //Interpolate over arc angles to achieve animation effect
         bringToFront()
         currentAnimDisposable?.dispose() //End previous animation
@@ -127,45 +125,55 @@ class Slice : RelativeLayout {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
-                    if (open) animationProgress += 1 else animationProgress -= 1
-                    if (animationProgress in 0F..240F) {
-                        val progress = animationProgress / 240F
-                        val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress)
-                        if (open) { //TODO: Refactor into methods.
-                            sweepAngle = originalSweepAngle + (animationElapsed * angleToCover)
-                            startAngle = originalStartAngle - (animationElapsed * angleToCover / 2)
-                            val xDiff = (fullOval.centerX() - normalOval.centerX())
-                            val yDiff = (fullOval.centerY() - normalOval.centerY())
-                            currentOval.top = normalOval.top + (yDiff - growthRate) * animationElapsed
-                            currentOval.bottom = normalOval.bottom + (yDiff + growthRate) * animationElapsed
-                            currentOval.left = normalOval.left + (xDiff - growthRate) * animationElapsed
-                            currentOval.right = normalOval.right + (xDiff + growthRate) * animationElapsed
-                            text.x = width / 2 - text.measuredWidth / 2F - (xOffset * 15 * animationElapsed) + xOffset * 10
-                            +xOffset * 10
-                            text.y = height / 2 - text.measuredHeight / 2F - (yOffset * 15 * animationElapsed) + yOffset * 10
-                            +yOffset * 10
-                            text.alpha = animationElapsed
-                        } else {
-                            sweepAngle = originalSweepAngle + angleToCover - (animationElapsed * angleToCover)
-                            startAngle = originalStartAngle - angleToCover / 2 + (animationElapsed * angleToCover / 2)
-                            val xDiff = (fullOval.centerX() - normalOval.centerX())
-                            val yDiff = (fullOval.centerY() - normalOval.centerY())
-                            currentOval.top = fullOval.top - (yDiff - growthRate) * animationElapsed
-                            currentOval.bottom = fullOval.bottom - (yDiff + growthRate) * animationElapsed
-                            currentOval.left = fullOval.left - (xDiff - growthRate) * animationElapsed
-                            currentOval.right = fullOval.right - (xDiff + growthRate) * animationElapsed
-                            text.x = width / 2 - text.measuredWidth / 2F - (xOffset * 15 * (1 - animationElapsed)) + xOffset * 10
-                            +xOffset * 10
-                            text.y = height / 2 - text.measuredHeight / 2F - (yOffset * 15 * (1 - animationElapsed)) + yOffset * 10
-                            +yOffset * 10
-                            text.alpha = 1 - animationElapsed
-                        }
-                    } else {
-                        currentOval = RectF(if (open) fullOval else normalOval)
-                        currentAnimDisposable?.dispose()
-                    }
-                    invalidate()
+                    animateSlice()
                 }.addTo(compositeDisposable)
+    }
+
+    private fun animateSlice() {
+        val angleToCover = 360 - originalSweepAngle
+        if (open) animationProgress += 1 else animationProgress -= 1
+        if (animationProgress in 0F..240F) {
+            val progress = animationProgress / 240F
+            val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress)
+            //Set position of Slice bounds
+            val (leftOffset, topOffset, rightOffset, bottomOffset) = getOffsetsForOval(open, animationElapsed)
+            currentOval.left = if (open) normalOval.left + leftOffset else fullOval.left + leftOffset
+            currentOval.top = if (open) normalOval.top + topOffset else fullOval.top + topOffset
+            currentOval.right = if (open) normalOval.right + rightOffset else fullOval.right + rightOffset
+            currentOval.bottom = if (open) normalOval.bottom + bottomOffset else fullOval.bottom + bottomOffset
+            //Calculate position of flying in TextView
+            val textOffset = if (open) 24 * animationElapsed else 24 * (1 - animationElapsed)
+            text.x = width / 2 - text.measuredWidth / 2F - (xOffset * textOffset) + xOffset * 10 + xOffset * 10
+            text.y = height / 2 - text.measuredHeight / 2F - (yOffset * textOffset) + yOffset * 10 + yOffset * 10
+            text.alpha = if (open) animationElapsed else 1 - animationElapsed //TextView alpha
+            //Calculate arc angle for opening/closing progress
+            if (open) {
+                sweepAngle = originalSweepAngle + (animationElapsed * angleToCover)
+                startAngle = originalStartAngle - (animationElapsed * angleToCover / 2)
+            } else {
+                sweepAngle = originalSweepAngle + angleToCover - (animationElapsed * angleToCover)
+                startAngle = originalStartAngle - angleToCover / 2 + (animationElapsed * angleToCover / 2)
+            }
+        } else {
+            currentOval = RectF(if (open) fullOval else normalOval) //Final positions
+            currentAnimDisposable?.dispose() //Animation done; we're finished with this Disposable
+        }
+        invalidate()
+    }
+
+    private data class Offsets(val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+    /**
+     * Calculates how much to add to or subtract from the source oval (either full or normal) for this current point in the animation.
+     */
+    private fun getOffsetsForOval(open: Boolean, animationElapsed: Float): Offsets {
+        val xDiff = (fullOval.centerX() - normalOval.centerX())
+        val yDiff = (fullOval.centerY() - normalOval.centerY())
+        val leftOffset = (if (open) xDiff - margin else -(xDiff - margin)) * animationElapsed
+        val topOffset = (if (open) yDiff - margin else -(yDiff - margin)) * animationElapsed
+        val rightOffset = (if (open) xDiff + margin else -(xDiff + margin)) * animationElapsed
+        val bottomOffset = (if (open) yDiff + margin else -(yDiff + margin)) * animationElapsed
+        return Offsets(leftOffset, topOffset, rightOffset, bottomOffset)
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -173,6 +181,4 @@ class Slice : RelativeLayout {
         canvas?.drawArc(currentOval, startAngle, sweepAngle, true, paint)
         super.onDraw(canvas)
     }
-
-    data class SliceModel(val title: String, val text: String?, val iconRes: Int?, val colorRes: Int)
 }
