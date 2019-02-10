@@ -13,7 +13,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         val text = "Buying an apartment, unit or townhouse usually means being part of a body corporate who handles the management and upkeep of the building and sometimes the entire vicinity."
         val dummies = listOf(
-                DummyModel("Title", text, null, R.color.material_blue_grey_800),
+                DummyModel("Title", text, R.drawable.ic_android_green_24dp, R.color.material_blue_grey_800),
+                DummyModel("Title", text, R.drawable.abc_ic_arrow_drop_right_black_24dp, R.color.material_blue_grey_800),
+                DummyModel("Title", text, R.drawable.abc_ic_arrow_drop_right_black_24dp, R.color.material_blue_grey_800),
                 DummyModel("Title", text, null, R.color.material_blue_grey_800),
                 DummyModel("Title", text, null, R.color.material_blue_grey_800),
                 DummyModel("Title", text, null, R.color.material_blue_grey_800))

@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -48,6 +49,7 @@ class Slice : RelativeLayout {
     private var open = false
 
     private val title = TextView(context)
+    private val icon = ImageView(context)
     private val text = TextView(context)
 
     init {
@@ -59,6 +61,8 @@ class Slice : RelativeLayout {
         text.layoutParams = RelativeLayout.LayoutParams(600, RelativeLayout.LayoutParams.WRAP_CONTENT)
         text.alpha = 0F //Initially not seen
         addView(text)
+        icon.layoutParams = RelativeLayout.LayoutParams(200, 200)
+        icon.alpha = 0F
     }
 
     //TODO: Investigate alternatives for telescoping constructors.
@@ -69,6 +73,10 @@ class Slice : RelativeLayout {
         this.originalSweepAngle = sweepAngle
         title.text = model.getTitle()
         text.text = model.getText()
+        model.getIconRes()?.let {
+            icon.setImageResource(it)
+            addView(icon)
+        }
         paint.color = ContextCompat.getColor(context, model.getColorRes())
     }
 
@@ -87,12 +95,17 @@ class Slice : RelativeLayout {
         yOffset = margin * (sin(midAngle)).toFloat()
         normalOval.offset(xOffset, yOffset)
         currentOval = RectF(normalOval)
-        title.x = w / 2 - title.measuredWidth / 2F + xOffset * 10
-        title.y = h / 2 - title.measuredHeight / 2F + yOffset * 10
-        text.x = w / 2 - text.measuredWidth / 2F + xOffset * 10
-        text.y = h / 2 - text.measuredHeight / 2F + yOffset * 10
-        text.layoutParams.width = w / 2 //TODO: Implement this width properly
+        title.x = centerAdjustingForDimension(title.measuredWidth, w, xOffset)
+        title.y = centerAdjustingForDimension(title.measuredHeight, h, yOffset)
+        text.x = centerAdjustingForDimension(text.measuredWidth, w, xOffset)
+        text.y = centerAdjustingForDimension(text.measuredHeight, h, yOffset)
+        text.layoutParams.width = w / 2
+        icon.x = centerAdjustingForDimension(icon.measuredWidth, w, xOffset)
+        icon.y = centerAdjustingForDimension(icon.measuredHeight, h, yOffset)
     }
+
+    /**Calculates the X position for an item to appear in the center of the Layout**/
+    private fun centerAdjustingForDimension(itemDimension: Int, layoutDimension: Int, offset: Float) = layoutDimension / 2 - itemDimension / 2F + offset * 10 //Can use either width or height as the widget is a square
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event?.action == MotionEvent.ACTION_DOWN) {
@@ -145,7 +158,8 @@ class Slice : RelativeLayout {
             val textOffset = if (open) 24 * animationElapsed else 24 * (1 - animationElapsed)
             text.x = width / 2 - text.measuredWidth / 2F - (xOffset * textOffset) + xOffset * 10 + xOffset * 10
             text.y = height / 2 - text.measuredHeight / 2F - (yOffset * textOffset) + yOffset * 10 + yOffset * 10
-            text.alpha = if (open) animationElapsed else 1 - animationElapsed //TextView alpha
+            text.alpha = if (open) animationElapsed else 1 - animationElapsed
+            icon.alpha = if (open) animationElapsed else 1 - animationElapsed //TODO: animate position of icon and title
             //Calculate arc angle for opening/closing progress
             if (open) {
                 sweepAngle = originalSweepAngle + (animationElapsed * angleToCover)
