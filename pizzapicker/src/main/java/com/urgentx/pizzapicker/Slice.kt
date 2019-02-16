@@ -61,7 +61,7 @@ class Slice : RelativeLayout {
         text.layoutParams = RelativeLayout.LayoutParams(600, RelativeLayout.LayoutParams.WRAP_CONTENT)
         text.alpha = 0F //Initially not seen
         addView(text)
-        icon.layoutParams = RelativeLayout.LayoutParams(200, 200)
+        icon.layoutParams = RelativeLayout.LayoutParams(100, 100)
         icon.alpha = 0F
     }
 
@@ -159,7 +159,9 @@ class Slice : RelativeLayout {
             text.x = width / 2 - text.measuredWidth / 2F - (xOffset * textOffset) + xOffset * 10 + xOffset * 10
             text.y = height / 2 - text.measuredHeight / 2F - (yOffset * textOffset) + yOffset * 10 + yOffset * 10
             text.alpha = if (open) animationElapsed else 1 - animationElapsed
-            icon.alpha = if (open) animationElapsed else 1 - animationElapsed //TODO: animate position of icon and title
+            icon.alpha = if (open) animationElapsed else 1 - animationElapsed
+            title.y = centerAdjustingForDimension(title.measuredHeight, height, yOffset) + if (open) 40 * animationElapsed else 40 * (1 - animationElapsed) //TODO: optimize, extract open/close logic
+            icon.y = centerAdjustingForDimension(title.measuredHeight, height, yOffset) + 0.7F * (if (open) icon.height.unaryMinus() * animationElapsed else icon.height.unaryMinus() * (1 - animationElapsed))
             //Calculate arc angle for opening/closing progress
             if (open) {
                 sweepAngle = originalSweepAngle + (animationElapsed * angleToCover)
