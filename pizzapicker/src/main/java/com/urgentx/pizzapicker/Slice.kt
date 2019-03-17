@@ -77,7 +77,7 @@ class Slice : RelativeLayout {
             icon.setImageResource(it)
             addView(icon)
         }
-        paint.color = ContextCompat.getColor(context, model.getColorRes())
+        paint.color = ContextCompat.getColor(context, model.getBackgroundColorRes())
     }
 
     constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
@@ -154,14 +154,6 @@ class Slice : RelativeLayout {
             currentOval.top = if (open) normalOval.top + topOffset else fullOval.top + topOffset
             currentOval.right = if (open) normalOval.right + rightOffset else fullOval.right + rightOffset
             currentOval.bottom = if (open) normalOval.bottom + bottomOffset else fullOval.bottom + bottomOffset
-            //Calculate position of flying in TextView
-            val textOffset = if (open) 24 * animationElapsed else 24 * (1 - animationElapsed)
-            text.x = width / 2 - text.measuredWidth / 2F - (xOffset * textOffset) + xOffset * 10 + xOffset * 10
-            text.y = height / 2 - text.measuredHeight / 2F - (yOffset * textOffset) + yOffset * 10 + yOffset * 10
-            text.alpha = if (open) animationElapsed else 1 - animationElapsed
-            icon.alpha = if (open) animationElapsed else 1 - animationElapsed
-            title.y = centerAdjustingForDimension(title.measuredHeight, height, yOffset) + if (open) 40 * animationElapsed else 40 * (1 - animationElapsed) //TODO: optimize, extract open/close logic
-            icon.y = centerAdjustingForDimension(title.measuredHeight, height, yOffset) + 0.7F * (if (open) icon.height.unaryMinus() * animationElapsed else icon.height.unaryMinus() * (1 - animationElapsed))
             //Calculate arc angle for opening/closing progress
             if (open) {
                 sweepAngle = originalSweepAngle + (animationElapsed * angleToCover)
@@ -170,11 +162,27 @@ class Slice : RelativeLayout {
                 sweepAngle = originalSweepAngle + angleToCover - (animationElapsed * angleToCover)
                 startAngle = originalStartAngle - angleToCover / 2 + (animationElapsed * angleToCover / 2)
             }
+            animateText(animationElapsed)
+            animateIcon(animationElapsed)
         } else {
             currentOval = RectF(if (open) fullOval else normalOval) //Final positions
             currentAnimDisposable?.dispose() //Animation done; we're finished with this Disposable
         }
         invalidate()
+    }
+
+    private fun animateText(animationElapsed: Float) {
+        //Calculate position of flying in TextView
+        val textOffset = if (open) 24 * animationElapsed else 24 * (1 - animationElapsed)
+        text.x = width / 2 - text.measuredWidth / 2F - (xOffset * textOffset) + xOffset * 10 + xOffset * 10
+        text.y = height / 2 - text.measuredHeight / 2F - (yOffset * textOffset) + yOffset * 10 + yOffset * 10
+        text.alpha = if (open) animationElapsed else 1 - animationElapsed
+        title.y = centerAdjustingForDimension(title.measuredHeight, height, yOffset) + if (open) 40 * animationElapsed else 40 * (1 - animationElapsed) //TODO: optimize, extract open/close logic
+    }
+
+    private fun animateIcon(animationElapsed: Float) {
+        icon.alpha = if (open) animationElapsed else 1 - animationElapsed
+        icon.y = centerAdjustingForDimension(title.measuredHeight, height, yOffset) + 0.7F * (if (open) icon.height.unaryMinus() * animationElapsed else icon.height.unaryMinus() * (1 - animationElapsed))
     }
 
     private data class Offsets(val left: Float, val top: Float, val right: Float, val bottom: Float)
