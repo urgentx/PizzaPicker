@@ -16,6 +16,9 @@ interface SliceModel {
     /**Resource ID for the Slice icon.*/
     fun getIconRes(): Int?
 
-    /**Resource ID for the color of the Slice.*/
-    fun getBackgroundColorRes(): Int
+    /**Resource ID for the color of the Slice in closed state.*/
+    fun getClosedBackgroundColorRes(): Int
+
+    /**Resource ID for the color of the Slice in open state.*/
+    fun getOpenBackgroundColorRes(): Int
 }

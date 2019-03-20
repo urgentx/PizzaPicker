@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
@@ -51,6 +50,8 @@ class Slice : RelativeLayout {
     private val title = TextView(context)
     private val icon = ImageView(context)
     private val text = TextView(context)
+    private val bgColorClosed: Int
+    private val bgColorOpen: Int
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
@@ -77,12 +78,10 @@ class Slice : RelativeLayout {
             icon.setImageResource(it)
             addView(icon)
         }
-        paint.color = ContextCompat.getColor(context, model.getBackgroundColorRes())
+        bgColorClosed = ContextCompat.getColor(context, model.getClosedBackgroundColorRes())
+        bgColorOpen = ContextCompat.getColor(context, model.getOpenBackgroundColorRes())
+        paint.color = bgColorClosed
     }
-
-    constructor(context: Context, attrs: AttributeSet, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
-
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int, startAngle: Float, sweepAngle: Float, model: SliceModel) : this(context, startAngle, sweepAngle, model)
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -118,8 +117,6 @@ class Slice : RelativeLayout {
             if (angle < 0) angle += 360
 
             return if (angle in startAngle..startAngle + sweepAngle && distance < width / 2) {
-                val midAngle = (startAngle + sweepAngle) / 2
-                logcat("angle: (${cos(midAngle) * (width / 2)}, ${sin(midAngle) * (width / 2)})")
                 open = !open
                 animateArc()
                 true //Consume touch
@@ -164,11 +161,17 @@ class Slice : RelativeLayout {
             }
             animateText(animationElapsed)
             animateIcon(animationElapsed)
+            interpolateBackgroundColor(if (open) 1 - animationElapsed else animationElapsed)
         } else {
             currentOval = RectF(if (open) fullOval else normalOval) //Final positions
             currentAnimDisposable?.dispose() //Animation done; we're finished with this Disposable
         }
         invalidate()
+    }
+
+    private fun interpolateBackgroundColor(animationElapsed: Float) {
+        logcat(animationElapsed.toString())
+        paint.color = interpolateColor(bgColorOpen, bgColorClosed, animationElapsed)
     }
 
     private fun animateText(animationElapsed: Float) {

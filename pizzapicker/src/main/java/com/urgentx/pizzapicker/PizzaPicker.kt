@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.BaseAdapter
 import android.widget.RelativeLayout
 import com.urgentx.pizzapicker.models.SliceModel
 
@@ -49,6 +48,7 @@ class PizzaPicker : RelativeLayout {
     }
 
     private fun createSlices(items: List<SliceModel>) {
+        //TODO: keep track of previous slices selected, to interpolate their color back to normal
         items.forEachIndexed { index, sliceModel ->
             val slice = Slice(context, index * (360F / (items.size)), 360F / (items.size), sliceModel)
             addView(slice, ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT))
