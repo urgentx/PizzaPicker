@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.RelativeLayout
 import com.urgentx.pizzapicker.models.SliceModel
+import io.reactivex.Observable
 
 
 class PizzaPicker : RelativeLayout {
@@ -48,10 +49,17 @@ class PizzaPicker : RelativeLayout {
     }
 
     private fun createSlices(items: List<SliceModel>) {
-        //TODO: keep track of previous slices selected, to interpolate their color back to normal
-        items.forEachIndexed { index, sliceModel ->
+        val slices = items.mapIndexed { index, sliceModel ->
             val slice = Slice(context, index * (360F / (items.size)), 360F / (items.size), sliceModel)
             addView(slice, ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+            slice
         }
+        setupSliceInterpolation(slices)
+
+    }
+
+    private fun setupSliceInterpolation(slices: List<Slice>) {
+        //TODO: keep track of previous slices selected, to interpolate their color back to normal
+//        Observable.combineLatest(slices).map{  }
     }
 }

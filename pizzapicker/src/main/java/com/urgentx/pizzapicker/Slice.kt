@@ -19,6 +19,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
 import kotlin.math.cos
 import kotlin.math.sin
@@ -53,6 +54,9 @@ class Slice : RelativeLayout {
     private val bgColorClosed: Int
     private val bgColorOpen: Int
 
+    /**Subscribe to this to see how much of the animation is done.**/
+    val animProgress = PublishSubject.create<Float>()
+
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
         setWillNotDraw(false) //enable drawing in this ViewGroup
@@ -64,6 +68,7 @@ class Slice : RelativeLayout {
         addView(text)
         icon.layoutParams = RelativeLayout.LayoutParams(100, 100)
         icon.alpha = 0F
+        animProgress.subscribe { interpolateBackgroundColor(it) }.addTo(compositeDisposable)
     }
 
     //TODO: Investigate alternatives for telescoping constructors.
@@ -161,7 +166,7 @@ class Slice : RelativeLayout {
             }
             animateText(animationElapsed)
             animateIcon(animationElapsed)
-            interpolateBackgroundColor(if (open) 1 - animationElapsed else animationElapsed)
+            if (open) animProgress.onNext(1 - animationElapsed)
         } else {
             currentOval = RectF(if (open) fullOval else normalOval) //Final positions
             currentAnimDisposable?.dispose() //Animation done; we're finished with this Disposable
@@ -169,7 +174,7 @@ class Slice : RelativeLayout {
         invalidate()
     }
 
-    private fun interpolateBackgroundColor(animationElapsed: Float) {
+    fun interpolateBackgroundColor(animationElapsed: Float) {
         logcat(animationElapsed.toString())
         paint.color = interpolateColor(bgColorOpen, bgColorClosed, animationElapsed)
     }
