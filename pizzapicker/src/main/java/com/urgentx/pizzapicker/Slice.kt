@@ -54,8 +54,9 @@ class Slice : RelativeLayout {
     private val bgColorClosed: Int
     private val bgColorOpen: Int
 
-    /**Subscribe to this to see how much of the animation is done.**/
-    val animProgress = PublishSubject.create<Float>()
+    /**Subscribe to this to see how much of the animation is done.
+     * After one successful cycle, this Subject sends an OnComplete and is recreated.**/
+    var animProgress = PublishSubject.create<Float>()
 
     init {
         paint.setShadowLayer(12F, 0F, 0F, Color.BLACK)
@@ -149,7 +150,8 @@ class Slice : RelativeLayout {
         if (open) animationProgress += 1 else animationProgress -= 1
         if (animationProgress in 0F..240F) {
             val progress = animationProgress / 240F
-            val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress)
+            animProgress.onNext(progress)
+            val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress) //TODO: Extract/allow user to define interpolator
             //Set position of Slice bounds
             val (leftOffset, topOffset, rightOffset, bottomOffset) = getOffsetsForOval(open, animationElapsed)
             currentOval.left = if (open) normalOval.left + leftOffset else fullOval.left + leftOffset
@@ -166,17 +168,18 @@ class Slice : RelativeLayout {
             }
             animateText(animationElapsed)
             animateIcon(animationElapsed)
-            if (open) animProgress.onNext(1 - animationElapsed)
         } else {
             currentOval = RectF(if (open) fullOval else normalOval) //Final positions
             currentAnimDisposable?.dispose() //Animation done; we're finished with this Disposable
+            animProgress.onComplete() //Indicate the slice is done animating
+            animProgress = PublishSubject.create()
         }
         invalidate()
     }
 
     fun interpolateBackgroundColor(animationElapsed: Float) {
-        logcat(animationElapsed.toString())
         paint.color = interpolateColor(bgColorOpen, bgColorClosed, animationElapsed)
+        invalidate() //TODO: Investigate where exactly this is necessary
     }
 
     private fun animateText(animationElapsed: Float) {

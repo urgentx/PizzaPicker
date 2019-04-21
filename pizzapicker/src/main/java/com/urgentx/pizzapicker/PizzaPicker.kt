@@ -9,6 +9,10 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.RelativeLayout
 import com.urgentx.pizzapicker.models.SliceModel
 import io.reactivex.Observable
+import io.reactivex.disposables.Disposable
+import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
+import java.util.*
 
 
 class PizzaPicker : RelativeLayout {
@@ -60,6 +64,27 @@ class PizzaPicker : RelativeLayout {
 
     private fun setupSliceInterpolation(slices: List<Slice>) {
         //TODO: keep track of previous slices selected, to interpolate their color back to normal
-//        Observable.combineLatest(slices).map{  }
+//        val obs = Stack<Observable<Float>>() //Stores latest exposed progress Observables from Slices
+//        val sub = Stack<Disposable>() //Stores latest Disposables resulting from subscribing to a progress
+//
+//        slices.forEach { slice ->
+//            slice.animProgress.subscribe {
+//                if (sub.isNotEmpty()) sub.pop().dispose()
+//                if (obs.isNotEmpty()) obs.pop()
+//                sub.push(obs.peek().subscribe { slice.interpolateBackgroundColor(it) })
+//                obs.push(slice.animProgress)
+//            }
+//        }
+
+        val o = BehaviorSubject.create<Float>()
+
+        slices.forEach {
+            it.animProgress.subscribe(o)
+        }
+
+        o.subscribe { logcat(it.toString()) }
+
+
+
     }
 }
