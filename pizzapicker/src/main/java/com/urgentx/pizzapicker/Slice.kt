@@ -54,6 +54,8 @@ class Slice : RelativeLayout {
     private val bgColorClosed: Int
     private val bgColorOpen: Int
 
+    lateinit var model: SliceModel
+
     /**Subscribe to this to see how much of the animation is done.
      * After one successful cycle, this Subject sends an OnComplete and is recreated.**/
     var animProgress = PublishSubject.create<Float>()
@@ -74,6 +76,7 @@ class Slice : RelativeLayout {
 
     //TODO: Investigate alternatives for telescoping constructors.
     constructor(context: Context, startAngle: Float, sweepAngle: Float, model: SliceModel) : super(context) {
+        this.model = model
         this.startAngle = startAngle
         this.originalStartAngle = startAngle
         this.sweepAngle = sweepAngle
@@ -150,7 +153,6 @@ class Slice : RelativeLayout {
         if (open) animationProgress += 1 else animationProgress -= 1
         if (animationProgress in 0F..240F) {
             val progress = animationProgress / 240F
-            animProgress.onNext(progress)
             val animationElapsed = interpolator.getInterpolation(if (open) progress else 1 - progress) //TODO: Extract/allow user to define interpolator
             //Set position of Slice bounds
             val (leftOffset, topOffset, rightOffset, bottomOffset) = getOffsetsForOval(open, animationElapsed)
@@ -162,6 +164,7 @@ class Slice : RelativeLayout {
             if (open) {
                 sweepAngle = originalSweepAngle + (animationElapsed * angleToCover)
                 startAngle = originalStartAngle - (animationElapsed * angleToCover / 2)
+                animProgress.onNext(progress)
             } else {
                 sweepAngle = originalSweepAngle + angleToCover - (animationElapsed * angleToCover)
                 startAngle = originalStartAngle - angleToCover / 2 + (animationElapsed * angleToCover / 2)
@@ -171,14 +174,12 @@ class Slice : RelativeLayout {
         } else {
             currentOval = RectF(if (open) fullOval else normalOval) //Final positions
             currentAnimDisposable?.dispose() //Animation done; we're finished with this Disposable
-            animProgress.onComplete() //Indicate the slice is done animating
-            animProgress = PublishSubject.create()
         }
         invalidate()
     }
 
     fun interpolateBackgroundColor(animationElapsed: Float) {
-        paint.color = interpolateColor(bgColorOpen, bgColorClosed, animationElapsed)
+        paint.color = interpolateColor(bgColorClosed, bgColorOpen, animationElapsed)
         invalidate() //TODO: Investigate where exactly this is necessary
     }
 
@@ -215,5 +216,9 @@ class Slice : RelativeLayout {
         //Draw an arc from the start of the angle along $sweepAngle distance of perimeter
         canvas?.drawArc(currentOval, startAngle, sweepAngle, true, paint)
         super.onDraw(canvas)
+    }
+
+    override fun toString(): String {
+        return model.getTitle()
     }
 }

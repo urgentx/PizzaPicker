@@ -76,15 +76,19 @@ class PizzaPicker : RelativeLayout {
 //            }
 //        }
 
-        val o = BehaviorSubject.create<Float>()
+        var currentlyExpandedSlice: Slice? = null
+        var currentDisposable: Disposable? = null
 
-        slices.forEach {
-            it.animProgress.subscribe(o)
+        slices.forEach { slice ->
+            slice.animProgress.buffer(2).map { it[1] > it[0] }.distinctUntilChanged().filter { it }.subscribe {
+                currentlyExpandedSlice?.let { ces ->
+                    if (ces != slice){
+                        currentDisposable?.dispose()
+                        currentDisposable = slice.animProgress.map { 1 - it }.subscribe{ces.interpolateBackgroundColor(it)}
+                        currentlyExpandedSlice = slice
+                    }
+                } ?: run { currentlyExpandedSlice = slice }
+            }
         }
-
-        o.subscribe { logcat(it.toString()) }
-
-
-
     }
 }

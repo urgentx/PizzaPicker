@@ -13,12 +13,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         val text = "Buying an apartment, unit or townhouse usually means being part of a body corporate who handles the management and upkeep of the building and sometimes the entire vicinity."
         val dummies = listOf(
-                DummyModel("Title", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
-                DummyModel("Title", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
-                DummyModel("Title", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
-                DummyModel("Title", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
-                DummyModel("Title", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
-                DummyModel("Title", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary))
+                DummyModel("1", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
+                DummyModel("2", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
+                DummyModel("3", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
+                DummyModel("4", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
+                DummyModel("5", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary),
+                DummyModel("6", R.color.colorAccent, text, null, R.drawable.ic_android_green_24dp, R.color.colorAccent, R.color.colorPrimary))
         pizza_picker.setItems(dummies)
     }
 
